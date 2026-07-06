@@ -1,0 +1,1 @@
+# Skills\n\nCurated, universal agent skills — importable into any LLM platform.\n\n## Skills\n\n- **[review-rigor](./review-rigor/)** — Universal artifact review (code, prompts, specs, configs). Copy-paste into ChatGPT, Claude, Cursor, or any LLM. Zero dependencies.
