@@ -1,19 +1,36 @@
 ---
 name: review-rigor
-description: "Independent review for any content type (code, prompts, specs, configs, proposals). Copy-paste the universal prompt into ANY LLM — ChatGPT, Claude, Cursor, or terminal. Zero dependencies. Supports three depths (quick/standard/deep), autofix loop (OpenClaw only). Trigger words: nézesd át, review, cross-check, double-check, sanity check, rigor check. Do NOT trigger for: trivial formatting, user-explicitly-approved content, files <20 lines, pure data entries."
-version: "4.0"
+description: "Universal analyzer — review ANYTHING regardless of content type. Auto-discovers what the thing is, decomposes, maps relationships, applies 12 lenses, synthesizes insights. Works on code, config, docs, projects, prompts, specs, conversations — anything. Single-file type-based reviews still available as specialized tools."
+version: "6.0"
 updated: "2026-07-06"
 ---
 
-# Review Rigor — Universal Independent Review
+# Review Rigor — Universal Analyzer
 
 ## Core Rule
 
-**Never self-review.** Get a second pair of eyes. Self-review misses 10-20× more problems. (v5 self-review: 0 criticals caught; independent reviewer: 4 criticals.)
+**The artifact defines the analysis, not a pre-selected category.**
 
-## Primary Interface: Universal Prompt (works everywhere)
+Traditional reviewers ask "what TYPE is this?" then apply that type's checklist. The universal analyzer asks "what IS this?" then automatically discovers what lenses matter.
 
-**Copy `prompts/universal-review.md`, replace `{FILE_CONTENT}` and `{TYPE}`, paste into ANY LLM.**
+For ANY review request, default to `prompts/universal-analyzer.md` unless you have a specific reason to use a single-file type-based review.
+
+## Primary Interface: Universal Analyzer (type-agnostic)
+
+**Use `prompts/universal-analyzer.md` — works on ANYTHING.**
+
+No `--type` flag. No depth selection. Just give it content. The analyzer:
+1. **Orient**: What IS this thing?
+2. **Decompose**: Break into natural parts (MECE)
+3. **Map**: How do parts relate? (calls, depends on, produces, overrides, conflicts)
+4. **Evaluate**: Auto-apply 12 lenses (structure, coherence, correctness, completeness, security, efficiency, maintainability, usability, operations, documentation, strategic fit, robustness)
+5. **Synthesize**: Patterns, root cause, bottleneck, the story
+
+**When to use**: Any time the user says "review", "analyze", "nézd át", "mit gondolsz erről" — UNLESS they specify a narrow scope ("just security audit this file").
+
+## Secondary: Single-File Type-Based Review (copy-paste)
+
+**Use `prompts/universal-review.md` — requires `{TYPE}` and `{DEPTH}`.**
 
 No OpenClaw. No API keys. No dependencies. Works in:
 - **Cursor / Claude Code** — paste the prompt, let the agent review
@@ -38,6 +55,7 @@ node review-rigor.js -f config/my.service -t config | pbcopy
 
 | Type | Auto-detect | Key concerns |
 |------|------------|-------------|
+| `project` | **"review the project / whole project / full audit / teljes"** | **All dimensions**: architecture, logical coherence, security, operations, code quality, config, specs, gaps, cross-cutting synthesis |
 | `prompt` | `.txt`, `.md` in `prompts/` dir | Instruction clarity, completeness, guardrails, ambiguity |
 | `spec` | `spec.md`, `proposal.md` | Technical soundness, edge cases, implementability |
 | `code` | `.ts`, `.js`, `.svelte`, `.py`, etc. | Correctness, security, architecture, test coverage |
@@ -48,7 +66,8 @@ node review-rigor.js -f config/my.service -t config | pbcopy
 
 | Depth | Scope |
 |-------|-------|
-| `deep` | Web research + architecture + security audit + edge cases. **Default.** |
+| `project` | Full 5-phase process — mental models → 10-dimension audit → synthesis. **Read `prompts/project-review-process.md` first.** |
+| `deep` | Web research + architecture + security audit + edge cases. **Default for single-file.** |
 | `standard` | Full pass: correctness, clarity, completeness, consistency. |
 | `quick` | Obvious, high-impact issues only. Gate check / re-review. |
 
@@ -64,8 +83,10 @@ node review-rigor.js -f config/my.service -t config | pbcopy
 
 | File | Purpose |
 |------|---------|
-| `prompts/universal-review.md` | **Universal prompt** — copy-paste into any LLM |
-| `references/review-criteria.md` | Full criteria by type×depth (loaded by OpenClaw agent or referenced manually) |
+| `prompts/universal-analyzer.md` | **Universal analyzer** — review ANYTHING, auto-discovers type, applies 12 lenses |
+| `prompts/universal-review.md` | **Single-file review** — copy-paste into any LLM (requires type+depth) |
+| `prompts/project-review-process.md` | **Project review** — 5-phase process (legacy, use universal analyzer instead) |
+| `references/review-criteria.md` | Full criteria by type×depth for single-file reviews |
 
 ---
 
@@ -110,6 +131,22 @@ Full pipeline: see `references/review-criteria.md` `### Deep` for the orchestrat
 - **Code/config default autofix=false** — override explicitly
 
 ---
+
+## Project Review Mode (🧠 Full Project Audit)
+
+When triggered with a **project-level** request ("review the whole project", "full audit", "teljes project review", "nézd át a teljes projektet"), follow `prompts/project-review-process.md`.
+
+**This is NOT single-file review.** Project review:
+1. Builds **4 mental models** (Actors, Data Flow, Responsibility, Time)
+2. Audits across **10 dimensions** (architecture, coherence, security, operations, code, config, health, specs, gaps, synthesis)
+3. Mandatory web research for security, operations, and deployment dimensions
+4. **Connects dots** — finds cross-cutting patterns, cascading decisions, and the project's "story"
+
+**Critical rules**:
+- Mental models come BEFORE auditing — reviewing without a mental model is blind
+- Web research is MANDATORY for dimensions 3 (Security), 4 (Operations), 6 (Deployment)
+- Phase 4 (Synthesis) connects findings across dimensions — this is the most valuable phase
+- Time budget: 40 min standard, 63 min deep
 
 ## When NOT to Use
 

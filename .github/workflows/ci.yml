@@ -1,0 +1,73 @@
+name: Skills CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secret scanning
+        run: |
+          RED='\033[0;31m'
+          GREEN='\033[0;32m'
+          NC='\033[0m'
+
+          PATTERNS=(
+            '[0-9]{8,10}:[A-Za-z0-9_-]{35}'
+            'sk-[a-zA-Z0-9_-]{20,}'
+            'ghp_[a-zA-Z0-9]{36}'
+            'github_pat_[a-zA-Z0-9_]{20,}'
+            'xox[baprs]-[a-zA-Z0-9-]{10,}'
+            'AIza[0-9A-Za-z_-]{35}'
+            'AKIA[0-9A-Z]{16}'
+            '-----BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY-----'
+          )
+
+          FILES=$(git ls-files | grep -v -E 'node_modules|pnpm-lock|package-lock|.git')
+          FOUND=0
+
+          for file in $FILES; do
+            [ ! -f "$file" ] && continue
+            for pattern in "${PATTERNS[@]}"; do
+              if grep -Eq -- "$pattern" "$file" 2>/dev/null; then
+                echo -e "${RED}🔴 SECRET in $file${NC}"
+                grep -nE -- "$pattern" "$file" | head -3
+                FOUND=1
+              fi
+            done
+          done
+
+          # .env check
+          if git ls-files | grep -E '\.env$|\.env\.' | grep -v '.env.example' | grep -q .; then
+            echo -e "${RED}🔴 .env files tracked${NC}"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 1 ]; then
+            echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${RED}  CI FAILED — Secrets detected${NC}"
+            echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            exit 1
+          fi
+
+          echo -e "${GREEN}✅ Secret scan passed ($(echo "$FILES" | wc -l) files)${NC}"
+
+  validate-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skill structure
+        run: |
+          for skill in */; do
+            echo "Checking $skill..."
+            [ -f "$skill/SKILL.md" ] && echo "  ✅ SKILL.md" || { echo "  ❌ Missing SKILL.md"; exit 1; }
+            [ -f "$skill/SKILL.md" ] && head -1 "$skill/SKILL.md" | grep -q "^#" && echo "  ✅ Header valid" || echo "  ⚠️  Header format"
+          done
+          echo "All skills validated"
